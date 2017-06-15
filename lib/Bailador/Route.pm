@@ -6,6 +6,7 @@ use Bailador::Exceptions;
 class Bailador::Route {
     subset HttpMethod of Str where {$_ eq any <GET PUT POST HEAD PUT DELETE TRACE OPTIONS CONNECT PATCH> }
     has HttpMethod @.method;
+    has Str $.orig-path is rw;
     has Regex $.path;
     has Callable $.code is rw;
     has Bailador::Route @.routes;
@@ -39,7 +40,9 @@ class Bailador::Route {
     }
     multi submethod new(Str $method, Str $path, Callable $code) {
         my $regex = "/ ^ " ~ route_to_regex($path) ~ " [ \$ || <?before '/' > ] /";
-        self.new($method, $regex.EVAL, $code);
+        my $self = self.new($method, $regex.EVAL, $code);
+        $self.orig-path = $path;
+        return $self;
     }
     multi submethod new($meth, Pair $route) {
         self.new($meth, $route.key, $route.value);
